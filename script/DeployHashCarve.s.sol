@@ -134,11 +134,11 @@ contract DeployHashCarve is Script {
             revert("Smoke Test Failed: Bytecode integrity mismatch at target address");
         }
 
-        // Call addressOf to ensure the logic (specifically the micro-constructor related computation) is functional.
-        // We use a simple payload (STOP instruction) for testing.
+        // Call addressOfBytecode to ensure the logic (specifically the micro-constructor related computation) is
+        // functional. We use a simple payload (STOP instruction) for testing.
         bytes memory testPayload = hex"00";
-        try HashCarve(hashCarve).addressOf(testPayload) returns (address p) {
-            console2.log('Smoke Test: addressOf(hex"00") returned:', p);
+        try HashCarve(hashCarve).addressOfBytecode(testPayload) returns (address p) {
+            console2.log('Smoke Test: addressOfBytecode(hex"00") returned:', p);
 
             // Manual calculation for comparison
             bytes memory microConstructor = hex"600B380380600B3D393DF3";
@@ -150,11 +150,11 @@ contract DeployHashCarve is Script {
 
             console2.log("Smoke Test: Manual prediction address:  ", predicted);
 
-            require(p == predicted, "Smoke Test Failed: addressOf result mismatch with manual calculation");
-            require(p != address(0), "Smoke Test Failed: addressOf returned zero address");
-            console2.log("Smoke Test: addressOf() functional test passed.");
+            require(p == predicted, "Smoke Test Failed: addressOfBytecode result mismatch with manual calculation");
+            require(p != address(0), "Smoke Test Failed: addressOfBytecode returned zero address");
+            console2.log("Smoke Test: addressOfBytecode() functional test passed.");
         } catch {
-            revert("Smoke Test Failed: call to addressOf() reverted");
+            revert("Smoke Test Failed: call to addressOfBytecode() reverted");
         }
     }
 

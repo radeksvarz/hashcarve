@@ -20,8 +20,8 @@ contract HashCarveTest is Test {
         // This returns 42 (0x2a) padded to 32 bytes.
         bytes memory runtime = hex"602a60005260206000f3";
 
-        address predicted = carver.addressOf(runtime);
-        address deployed = carver.carve(runtime);
+        address predicted = carver.addressOfBytecode(runtime);
+        address deployed = carver.carveBytecode(runtime);
 
         assertEq(deployed, predicted, "Address mismatch");
         assertNotEq(deployed, address(0), "Deployment failed");
@@ -41,12 +41,12 @@ contract HashCarveTest is Test {
     function test_AddressOfConsistency() public {
         bytes memory runtime = hex"600160005260206000f3";
 
-        address addr1 = carver.addressOf(runtime);
-        address addr2 = carver.addressOf(runtime);
+        address addr1 = carver.addressOfBytecode(runtime);
+        address addr2 = carver.addressOfBytecode(runtime);
 
         assertEq(addr1, addr2, "Address should be deterministic");
 
-        address deployed = carver.carve(runtime);
+        address deployed = carver.carveBytecode(runtime);
         assertEq(deployed, addr1, "Deployed address does not match predicted address");
     }
 
@@ -55,10 +55,10 @@ contract HashCarveTest is Test {
      */
     function test_RevertOnDuplicate() public {
         bytes memory runtime = hex"60ff60005260206000f3";
-        carver.carve(runtime);
+        carver.carveBytecode(runtime);
 
         vm.expectRevert(IHashCarve.DeploymentFailed.selector);
-        carver.carve(runtime);
+        carver.carveBytecode(runtime);
     }
 
     /**
@@ -67,7 +67,7 @@ contract HashCarveTest is Test {
     function test_RevertOnEFPrefix() public {
         bytes memory runtime = hex"ef001122";
         vm.expectRevert(IHashCarve.DeploymentFailed.selector);
-        carver.carve(runtime);
+        carver.carveBytecode(runtime);
     }
 
     /**
@@ -76,7 +76,7 @@ contract HashCarveTest is Test {
     function test_EmptyBytecode() public {
         bytes memory runtime = hex"";
         vm.expectRevert(IHashCarve.DeploymentFailed.selector);
-        carver.carve(runtime);
+        carver.carveBytecode(runtime);
     }
 
     /**
@@ -95,8 +95,8 @@ contract HashCarveTest is Test {
         // EIP-3541: Forbidden prefix 0xEF (reserved for EOF)
         vm.assume(boundedRecord[0] != 0xEF);
 
-        address predicted = carver.addressOf(boundedRecord);
-        address deployed = carver.carve(boundedRecord);
+        address predicted = carver.addressOfBytecode(boundedRecord);
+        address deployed = carver.carveBytecode(boundedRecord);
 
         assertEq(deployed, predicted, "Fuzz match failed");
         assertEq(deployed.code, boundedRecord, "Fuzz code failed");
@@ -107,11 +107,11 @@ contract HashCarveTest is Test {
      */
     function test_StaticPrediction() public {
         bytes memory runtime = hex"604260005260206000f3";
-        address predictedBefore = carver.addressOf(runtime);
+        address predictedBefore = carver.addressOfBytecode(runtime);
 
-        carver.carve(runtime);
+        carver.carveBytecode(runtime);
 
-        address predictedAfter = carver.addressOf(runtime);
+        address predictedAfter = carver.addressOfBytecode(runtime);
         assertEq(predictedBefore, predictedAfter, "Prediction should be static");
     }
 
@@ -121,8 +121,8 @@ contract HashCarveTest is Test {
     function test_Exactly32Bytes() public {
         bytes memory runtime = hex"0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20";
 
-        address predicted = carver.addressOf(runtime);
-        address deployed = carver.carve(runtime);
+        address predicted = carver.addressOfBytecode(runtime);
+        address deployed = carver.carveBytecode(runtime);
 
         assertEq(deployed, predicted, "Address mismatch (32 bytes)");
         assertEq(deployed.code, runtime, "Code mismatch (32 bytes)");
@@ -137,8 +137,8 @@ contract HashCarveTest is Test {
             hex"2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40"
         );
 
-        address predicted = carver.addressOf(runtime);
-        address deployed = carver.carve(runtime);
+        address predicted = carver.addressOfBytecode(runtime);
+        address deployed = carver.carveBytecode(runtime);
 
         assertEq(deployed, predicted, "Address mismatch (64 bytes)");
         assertEq(deployed.code, runtime, "Code mismatch (64 bytes)");

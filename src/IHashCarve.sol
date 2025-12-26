@@ -16,19 +16,23 @@ interface IHashCarve {
 
     /**
      * @notice Deploys the provided runtime bytecode as a content-addressable contract.
+     * @dev The identity (resultant address) is determined by every byte of the input runtimeBytecode array,
+     *      including any compiler CBOR metadata if attached by the compiler as of the configuration.
      * @param runtimeBytecode The raw runtime bytecode to deploy.
      * @return addr The address of the deployed contract.
      */
-    function carve(
+    function carveBytecode(
         bytes calldata runtimeBytecode
     ) external returns (address addr);
 
     /**
      * @notice Predicts the address of a contract deployed with the given runtime bytecode.
+     * @dev The identity (resultant address) is determined by every byte of the input runtimeBytecode array,
+     *      including any compiler CBOR metadata if attached by the compiler as of the configuration.
      * @param runtimeBytecode The raw runtime bytecode.
      * @return addr The predicted deterministic address.
      */
-    function addressOf(
+    function addressOfBytecode(
         bytes calldata runtimeBytecode
     ) external view returns (address addr);
 }

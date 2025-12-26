@@ -9,8 +9,8 @@ pragma solidity 0.8.33;
  * @dev Deployed permissionlessly via CreateX to ensure the same address across all chains.
  *
  * Usage:
- * 1. Calculate and predict the address of your contract based on its raw runtime bytecode using addressOf().
- * 2. Deploy the contract using carve(runtimeBytecode).
+ * 1. Calculate and predict the address of your contract based on its raw runtime bytecode using addressOfBytecode().
+ * 2. Deploy the contract using carveBytecode(runtimeBytecode).
  *    - No constructor code is executed; the provided bytecode becomes the runtime code.
  *    - The address is deterministically based on the runtime bytecode.
  *    - Multichain consistency is guaranteed if HashCarve is deployed at the same address on all chains.
@@ -38,10 +38,12 @@ contract HashCarve is IHashCarve {
      */
     /**
      * @notice Deploys the provided runtime bytecode as a content-addressable contract.
+     * @dev The identity (resultant address) is determined by every byte of the input runtimeBytecode array,
+     *      including any compiler CBOR metadata if attached by the compiler as of the configuration.
      * @param runtimeBytecode The raw runtime bytecode to deploy.
      * @return addr The address of the deployed contract.
      */
-    function carve(
+    function carveBytecode(
         bytes calldata runtimeBytecode
     ) external returns (address addr) {
         assembly {
@@ -75,10 +77,12 @@ contract HashCarve is IHashCarve {
 
     /**
      * @notice Predicts the address of a contract deployed with the given runtime bytecode.
+     * @dev The identity (resultant address) is determined by every byte of the input runtimeBytecode array,
+     *      including any compiler CBOR metadata if attached by the compiler as of the configuration.
      * @param runtimeBytecode The raw runtime bytecode.
      * @return addr The predicted deterministic CREATE2 address.
      */
-    function addressOf(
+    function addressOfBytecode(
         bytes calldata runtimeBytecode
     ) external view returns (address) {
         assembly {

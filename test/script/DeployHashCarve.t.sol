@@ -72,11 +72,11 @@ contract DeployHashCarveTest is Test {
         // 3. Functional Test: Verify addressOf
         HashCarve hc = HashCarve(hashCarveAddress);
         bytes memory testPayload = hex"aabbcc";
-        address predicted = hc.addressOf(testPayload);
+        address predicted = hc.addressOfBytecode(testPayload);
         assertTrue(predicted != address(0), "predicted address should not be zero");
 
         // Try to carve something
-        address carved = hc.carve(testPayload);
+        address carved = hc.carveBytecode(testPayload);
         assertEq(carved, predicted, "Carved address should match predicted address");
         assertEq(carved.code.length, testPayload.length, "Carved code length mismatch");
     }
