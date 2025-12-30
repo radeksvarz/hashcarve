@@ -12,23 +12,23 @@ import {HashCarve} from "../src/HashCarve.sol";
 interface ICreateX {
     /**
      * @dev Deploys a contract using CREATE2.
-     * @param magic_salt The magic_salt for the contract deployment.
+     * @param salt The salt for the contract deployment.
      * @param initCode The initialization code of the contract to be deployed.
      * @return newContract The address of the deployed contract.
      */
     function deployCreate2(
-        bytes32 magic_salt,
+        bytes32 salt,
         bytes calldata initCode
     ) external payable returns (address newContract);
 
     /**
      * @dev Computes the address of a contract deployed using CREATE2.
-     * @param magic_salt The magic_salt for the contract deployment.
+     * @param salt The salt for the contract deployment.
      * @param initCodeHash The hash of the initialization code of the contract to be deployed.
      * @return predictedAddress The address of the deployed contract.
      */
     function computeCreate2Address(
-        bytes32 magic_salt,
+        bytes32 salt,
         bytes32 initCodeHash
     ) external view returns (address predictedAddress);
 }
@@ -50,11 +50,16 @@ contract DeployHashCarve is Script {
 
         // 2. Prepare deployment data
         bytes memory initCode = type(HashCarve).creationCode;
-        bytes32 magic_salt = keccak256("MEGVA071315");
+        // Set salt without frontrunning protection, i.e. first 20 bytes = 0x0 - enables permissionless deployments;
+        // 0 byte to switch off cross-chain redeploy protection; 11 bytes magic salt
+        // Details:
+        // https://github.com/pcaversaccio/createx#permissioned-deploy-protection-and-cross-chain-redeploy-protection
+        bytes32 salt = bytes32(abi.encodePacked(address(0), hex"00", bytes11("MEGVA071315")));
         bytes32 initCodeHash = keccak256(initCode);
 
         // 3. Address Prediction
-        address predicted = ICreateX(CREATEX_ADDRESS).computeCreate2Address(magic_salt, initCodeHash);
+        bytes32 guardedSalt = keccak256(abi.encode(salt));
+        address predicted = ICreateX(CREATEX_ADDRESS).computeCreate2Address(guardedSalt, initCodeHash);
 
         console2.log("------------------------------------------------------------------");
         console2.log("HashCarve Deployment Script");
@@ -69,7 +74,7 @@ contract DeployHashCarve is Script {
         } else {
             console2.log("HashCarve not found at predicted address. Initiating deployment...");
             vm.startBroadcast();
-            hashCarve = ICreateX(CREATEX_ADDRESS).deployCreate2(magic_salt, initCode);
+            hashCarve = ICreateX(CREATEX_ADDRESS).deployCreate2(salt, initCode);
             vm.stopBroadcast();
 
             if (hashCarve != predicted) {

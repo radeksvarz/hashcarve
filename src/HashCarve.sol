@@ -108,4 +108,46 @@ contract HashCarve is IHashCarve {
             return(0x00, 0x20)
         }
     }
+
+    /**
+     * @notice Checks if the contract at address target was deployed via HashCarve.
+     * @dev Reconstructs the initcode from target's runtime code and predicts the CREATE2 address.
+     * @param target The address to verify.
+     * @return true if the contract at target address was deployed via HashCarve.
+     */
+    function verify(
+        address target
+    ) external view returns (bool) {
+        assembly {
+            // Get code size of target
+            let size := extcodesize(target)
+            if iszero(size) {
+                mstore(0x00, 0)
+                return(0x00, 0x20)
+            }
+
+            // Reconstruction buffer: [MICRO_CONSTRUCTOR (11 bytes)] ++ [target runtime code]
+            let ptr := mload(0x40)
+            // Store MICRO_CONSTRUCTOR (11 bytes)
+            mstore(ptr, 0x600B380380600B3D393DF3000000000000000000000000000000000000000000)
+            // Copy target's bytecode into buffer at offset 11
+            extcodecopy(target, add(ptr, 11), 0, size)
+
+            // 1. Calculate initcode hash: keccak256(ptr, 11 + size)
+            let initcodeHash := keccak256(ptr, add(11, size))
+
+            // 2. Prepare CREATE2 calculation buffer (85 bytes) at 0x00
+            mstore8(0x00, 0xff)
+            mstore(0x01, shl(96, address()))
+            mstore(0x15, 0) // salt
+            mstore(0x35, initcodeHash)
+
+            // Compute the predicted address and compare with target
+            let predicted := and(keccak256(0x00, 85), 0xffffffffffffffffffffffffffffffffffffffff)
+
+            // Store result (bool) and return
+            mstore(0x00, eq(predicted, target))
+            return(0x00, 0x20)
+        }
+    }
 }

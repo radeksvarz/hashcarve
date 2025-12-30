@@ -35,4 +35,13 @@ interface IHashCarve {
     function addressOfBytecode(
         bytes calldata runtimeBytecode
     ) external view returns (address addr);
+
+    /**
+     * @notice Checks if the contract at address target was deployed via HashCarve.
+     * @param target The address to verify.
+     * @return true if the contract at target address was deployed via HashCarve.
+     */
+    function verify(
+        address target
+    ) external view returns (bool);
 }

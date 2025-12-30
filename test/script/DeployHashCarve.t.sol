@@ -18,8 +18,10 @@ contract MockCreateX {
         bytes calldata initCode
     ) external payable returns (address newContract) {
         bytes memory code = initCode;
+
+        bytes32 guardedSalt = keccak256(abi.encode(salt));
         assembly {
-            newContract := create2(callvalue(), add(code, 0x20), mload(code), salt)
+            newContract := create2(callvalue(), add(code, 0x20), mload(code), guardedSalt)
         }
         require(newContract != address(0), "MockCreateX: deployment failed");
     }
