@@ -69,6 +69,9 @@ contract DeployHashCarve is Script {
         console2.log("------------------------------------------------------------------");
 
         if (predicted.code.length > 0) {
+            if (predicted.codehash != keccak256(type(HashCarve).runtimeCode)) {
+                revert("Deployment mismatch: occupied address has different codehash");
+            }
             console2.log("HashCarve already deployed at predicted address. Skipping.");
             return predicted;
         } else {
@@ -81,6 +84,8 @@ contract DeployHashCarve is Script {
                 revert("Deployment address mismatch: resulting address does not match predicted address");
             }
             console2.log("Successfully deployed HashCarve to:", hashCarve);
+            console2.log("HashCarve extcodehash:");
+            console2.logBytes32(hashCarve.codehash);
         }
 
         // 4. Post-Deploy Smoke Test

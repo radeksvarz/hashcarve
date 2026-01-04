@@ -145,19 +145,19 @@ contract HashCarveTest is Test {
     }
 
     /**
-     * @notice Test the verify function.
+     * @notice Test the isCarved function.
      */
-    function test_Verify() public {
+    function test_IsCarved() public {
         bytes memory runtime = hex"602a60005260206000f3"; // 42
         address target = carver.carveBytecode(runtime);
 
-        assertTrue(carver.verify(target), "Should verify successfully");
-        assertFalse(carver.verify(address(this)), "Should not verify non-HashCarve contract");
-        assertFalse(carver.verify(address(0)), "Should return false for zero address");
-        assertFalse(carver.verify(address(0xdead)), "Should return false for empty address");
+        assertTrue(carver.isCarved(target), "Should verify successfully");
+        assertFalse(carver.isCarved(address(this)), "Should not verify non-HashCarve contract");
+        assertFalse(carver.isCarved(address(0)), "Should return false for zero address");
+        assertFalse(carver.isCarved(address(0xdead)), "Should return false for empty address");
 
         bytes memory runtime2 = hex"602b60005260206000f3"; // 43
         address target2 = carver.carveBytecode(runtime2);
-        assertTrue(carver.verify(target2), "Should verify second contract successfully");
+        assertTrue(carver.isCarved(target2), "Should verify second contract successfully");
     }
 }

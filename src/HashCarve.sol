@@ -111,11 +111,15 @@ contract HashCarve is IHashCarve {
 
     /**
      * @notice Checks if the contract at address target was deployed via HashCarve.
+     * @dev Bytecode Identity Validation: This verifies that the code at `target` matches the
+     *      content-addressable derivation from its own runtime bytecode + HashCarve micro-constructor.
+     *      NOTE: This is NOT "Source Code Verification" (like Etherscan). It validates the *origin* and *integrity*
+     *      of the deployed bytecode, not the Solidity source.
      * @dev Reconstructs the initcode from target's runtime code and predicts the CREATE2 address.
-     * @param target The address to verify.
+     * @param target The address to check.
      * @return true if the contract at target address was deployed via HashCarve.
      */
-    function verify(
+    function isCarved(
         address target
     ) external view returns (bool) {
         assembly {

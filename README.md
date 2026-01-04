@@ -27,11 +27,11 @@ Use **HashCarve** in your deployment scripts:
 *   **Foundry:** [Foundry deployment script](#1-with-foundry)
 *   **Hardhat:** [Hardhat deployment script](#2-with-hardhat)
 
-**Verify already deployed code:**
+**Validation of already deployed code:**
 ```solidity
-bool isCanonical = HASH_CARVE.verify(deployedAddress);
+bool isCanonical = HASH_CARVE.isCarved(deployedAddress);
 ```
-Further details about [verification](#why-verify) (addresses are de facto bytecode hashes).
+Further details about [Validation](#why-validate) (addresses are de facto bytecode hashes).
 
 ## Key Features
 
@@ -52,7 +52,7 @@ This property transforms how Diamonds are managed:
 
 *   **Logical Immutability:** A facet at a HashCarve address is guaranteed to contain exactly the logic defined by its hash.
 *   **Canonical Facets:** The community can converge on "canonical" facet addresses for common logic (e.g., Ownership, DiamondLoupe), as the address will be identical for everyone using HashCarve on any chain.
-*   **Verification by Hash:** Users can verify the logic of a Diamond simply by checking if the facet addresses match the expected HashCarve derivation of the source code.
+*   **Validation by Hash:** Users can validate the logic of a Diamond simply by checking if the facet addresses match the expected HashCarve derivation of the source code.
 
 > **Warning ⚠️**
 > **Do NOT use HashCarve for the Diamond entrypoint (the proxy contract itself).**
@@ -96,29 +96,30 @@ cbor_metadata = false
 
 *Note: This results in **partial verification** on block explorers, as the metadata hash is no longer present in the bytecode.*
 
-## Contract Verification: The `verify()` Function
+## Contract Validation: The `isCarved()` Function
 
-One of the most powerful features of HashCarve is its ability to verify the integrity and origin of any deployed contract on-chain.
+One of the most powerful features of HashCarve is its ability to validate the integrity and origin of any deployed contract on-chain.
 
-### Why verify?
+### Why validate?
 
-In a multichain environment, you often need to ensure that a contract at `address X` actually contains the logic you expect. Traditional verification involves checking block explorers (Etherscan), which relies on off-chain data and trust in the explorer's verification engine.
+In a multichain environment, you often need to ensure that a contract at `address X` actually contains the logic you expect. Traditional validation involves checking block explorers (Etherscan), which relies on off-chain data and trust in the explorer's verification engine.
 
-The `verify(address target)` function provides **on-chain, cryptographic proof**:
+The `isCarved(address target)` function provides **on-chain, cryptographic proof**:
 1.  **Origin Proof**: It confirms the contract was deployed by **this** specific HashCarve instance.
 2.  **Logic Integrity**: It guarantees that the contract's address is exactly the CREATE2 result of its own runtime bytecode wrapped in the canonical HashCarve micro-constructor.
+3.  **On-chain Identity Proof**: Unlike Etherscan verification (source-to-bytecode), `isCarved` provides an on-chain proof that the **contract's address** is a direct, untampered result of its runtime bytecode.
 
-If `verify(target)` returns `true`, you have absolute certainty that the logic at that address is "canonical" and hasn't been tampered with or deployed via a non-compliant factory.
+If `isCarved(target)` returns `true`, you have absolute certainty that the logic at that address is "canonical" and hasn't been tampered with or deployed via a non-compliant factory.
 
 ### How it works
 
-The `verify` function performs the following steps in a single, gas-efficient static call:
+The `isCarved` function performs the following steps in a single, gas-efficient static call:
 1.  Loads the **runtime bytecode** from the `target` address.
 2.  Prepends the HashCarve **micro-constructor**.
 3.  Calculates the **CREATE2 address** that would result from that payload using the fixed salt (`0`).
 4.  Compares the calculated address with the `target` address.
 
-> This allows for seamless, trustless integration where your proxy or registry can automatically verify facets before allowing them to be added. It also means that the design blueprint of your solution can contain these deployment addresses as de facto bytecode hashes, so no extra runtime bytecode hash is needed for verification.
+> This allows for seamless, trustless integration where your proxy or registry can automatically validate facets before allowing them to be added. It also means that the design blueprint of your solution can contain these deployment addresses as de facto bytecode hashes, so no extra runtime bytecode hash is needed as a proof.
 
 ## Decision Tree: Choosing Your Deployment Strategy
 
@@ -234,12 +235,12 @@ interface IHashCarve {
 
 contract DeployScript {
     // HashCarve canonical address
-    IHashCarve constant HASH_CARVE = IHashCarve(0xD8c29839A0CD757dc1Add3F9A44546195d7abeBa);
+    IHashCarve constant HASH_CARVE = IHashCarve(0x24b5000611b10875e6ec661B48EE17689B22BB8A);
 
     function run() external {
         // Check if HashCarve is deployed on this chain (checking bytecode integrity)
         // Note: Hash depends on compiler version 0.8.33 and specific settings
-        bytes32 expectedHash = 0x4282d9fbb34f00095c1c3333eb320e7882ba1cde3c68917a1794fa7f6b6aa359;
+        bytes32 expectedHash = 0x650abcc1cf08220b0c0395f2ceeefec6b0b1e64f042dac8ef603c703bcbe5b07;
         if (address(HASH_CARVE).codehash != expectedHash) {
             revert("HashCarve not found at expected address or bytecode mismatch. Please deploy it first.");
         }
@@ -275,11 +276,11 @@ In Hardhat, you can use `ethers.js` to interact with the factory. Ensure you are
 const { ethers } = require("hardhat");
 
 async function main() {
-  const hashCarveAddress = "0xD8c29839A0CD757dc1Add3F9A44546195d7abeBa"; // HashCarve canonical address
+  const hashCarveAddress = "0x24b5000611b10875e6ec661B48EE17689B22BB8A"; // HashCarve canonical address
   const hashCarve = await ethers.getContractAt("IHashCarve", hashCarveAddress);
 
   // Check if HashCarve is deployed on this chain (checking bytecode integrity)
-  const expectedHash = "0x4282d9fbb34f00095c1c3333eb320e7882ba1cde3c68917a1794fa7f6b6aa359";
+  const expectedHash = "0x650abcc1cf08220b0c0395f2ceeefec6b0b1e64f042dac8ef603c703bcbe5b07";
   const factoryCode = await ethers.provider.getCode(hashCarveAddress);
   if (ethers.keccak256(factoryCode) !== expectedHash) {
     throw new Error("HashCarve not found at expected address or bytecode mismatch.");
