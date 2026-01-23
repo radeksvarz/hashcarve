@@ -14,6 +14,7 @@ pragma solidity 0.8.33;
  *    - No constructor code is executed; the provided bytecode becomes the runtime code.
  *    - The address is deterministically based on the runtime bytecode.
  *    - Multichain consistency is guaranteed if HashCarve is deployed at the same address on all chains.
+ * 3. Use carveBatch(runtimes) to deploy multiple contracts atomically in a single transaction.
  */
 import {IHashCarve} from "./IHashCarve.sol";
 
@@ -46,20 +47,48 @@ contract HashCarve is IHashCarve {
     function carveBytecode(
         bytes calldata runtimeBytecode
     ) external returns (address addr) {
-        assembly {
-            // Memory layout (deployment payload):
-            // [0x00:0x0b] = 11-byte micro-constructor
-            // [0x0b:...]  = runtimeBytecode
-            mstore(0x00, 0x600B380380600B3D393DF3000000000000000000000000000000000000000000)
+        return _carveBytecode(runtimeBytecode);
+    }
 
-            // Copy runtimeBytecode to memory offset 11
-            calldatacopy(0x0b, runtimeBytecode.offset, runtimeBytecode.length)
+    /**
+     * @notice Deploys multiple contracts in a single transaction.
+     * @dev Useful for ensuring atomic deployment of related contracts (e.g. Diamond Facets) and saving gas.
+     * @param _runtimes Array of runtime bytecodes to deploy.
+     * @return deployedAddresses Array of basic addresses of the deployed contracts.
+     */
+    function carveBatch(
+        bytes[] calldata _runtimes
+    ) external returns (address[] memory deployedAddresses) {
+        deployedAddresses = new address[](_runtimes.length);
+
+        for (uint256 i = 0; i < _runtimes.length;) {
+            deployedAddresses[i] = _carveBytecode(_runtimes[i]);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _carveBytecode(
+        bytes calldata runtimeBytecode
+    ) internal returns (address addr) {
+        assembly {
+            // Get free memory pointer
+            let ptr := mload(0x40)
+
+            // Memory layout (deployment payload):
+            // [ptr:ptr+0x0b] = 11-byte micro-constructor
+            // [ptr+0x0b:...] = runtimeBytecode
+            mstore(ptr, 0x600B380380600B3D393DF3000000000000000000000000000000000000000000)
+
+            // Copy runtimeBytecode to memory offset ptr + 11
+            calldatacopy(add(ptr, 0x0b), runtimeBytecode.offset, runtimeBytecode.length)
 
             // value = 0 // no value transfer to the target contract
-            // memory pointer = 0
+            // memory pointer = ptr
             // size = runtimeBytecode.length + 0x0b (micro_constructor.length)
             // salt = 0
-            addr := create2(0, 0, add(0x0b, runtimeBytecode.length), 0)
+            addr := create2(0, ptr, add(0x0b, runtimeBytecode.length), 0)
 
             // Verify deployment: address must be non-zero, size must be non-zero and match input length.
             let carvedSize := extcodesize(addr)
@@ -68,10 +97,6 @@ contract HashCarve is IHashCarve {
                 mstore(0x00, 0x30116425)
                 revert(0x1c, 0x04)
             }
-
-            // Return addr directly from assembly
-            mstore(0x00, addr)
-            return(0x00, 0x20)
         }
     }
 

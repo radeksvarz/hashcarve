@@ -235,12 +235,12 @@ interface IHashCarve {
 
 contract DeployScript {
     // HashCarve canonical address
-    IHashCarve constant HASH_CARVE = IHashCarve(0x24b5000611b10875e6ec661B48EE17689B22BB8A);
+    IHashCarve constant HASH_CARVE = IHashCarve(0xbC22b184901c28942e391a6B2D86C1aBeE6bc7ad);
 
     function run() external {
         // Check if HashCarve is deployed on this chain (checking bytecode integrity)
         // Note: Hash depends on compiler version 0.8.33 and specific settings
-        bytes32 expectedHash = 0x650abcc1cf08220b0c0395f2ceeefec6b0b1e64f042dac8ef603c703bcbe5b07;
+        bytes32 expectedHash = 0x663591e5ff14eb55ef1f3f167deefea8779a3a1efbfd7858c293892258446558;
         if (address(HASH_CARVE).codehash != expectedHash) {
             revert("HashCarve not found at expected address or bytecode mismatch. Please deploy it first.");
         }
@@ -276,11 +276,11 @@ In Hardhat, you can use `ethers.js` to interact with the factory. Ensure you are
 const { ethers } = require("hardhat");
 
 async function main() {
-  const hashCarveAddress = "0x24b5000611b10875e6ec661B48EE17689B22BB8A"; // HashCarve canonical address
+  const hashCarveAddress = "0xbC22b184901c28942e391a6B2D86C1aBeE6bc7ad"; // HashCarve canonical address
   const hashCarve = await ethers.getContractAt("IHashCarve", hashCarveAddress);
 
   // Check if HashCarve is deployed on this chain (checking bytecode integrity)
-  const expectedHash = "0x650abcc1cf08220b0c0395f2ceeefec6b0b1e64f042dac8ef603c703bcbe5b07";
+  const expectedHash = "0x663591e5ff14eb55ef1f3f167deefea8779a3a1efbfd7858c293892258446558";
   const factoryCode = await ethers.provider.getCode(hashCarveAddress);
   if (ethers.keccak256(factoryCode) !== expectedHash) {
     throw new Error("HashCarve not found at expected address or bytecode mismatch.");
@@ -305,6 +305,19 @@ async function main() {
   }
 }
 ```
+
+### 3. Deploying HashCarve on a New Chain
+
+If HashCarve is not yet deployed on your target chain, you can deploy it yourself permissionlessly. Since it uses **CreateX**, the address will be identical to all other chains.
+
+1.  **Ensure CreateX is available:** Check if the CreateX factory exists at `0xba5Ed7f582c21350a4175787f73a38a712312345` on your chain.
+2.  **Run the deployment script:**
+
+```bash
+forge script script/DeployHashCarve.s.sol --rpc-url <YOUR_RPC_URL> --broadcast
+```
+
+3.  **Verify:** The script will check the address. If successful, HashCarve will be at `0xbC22b184901c28942e391a6B2D86C1aBeE6bc7ad`.
 
 ## HashCarve Deployments
 

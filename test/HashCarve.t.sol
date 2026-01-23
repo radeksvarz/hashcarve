@@ -160,4 +160,31 @@ contract HashCarveTest is Test {
         address target2 = carver.carveBytecode(runtime2);
         assertTrue(carver.isCarved(target2), "Should verify second contract successfully");
     }
+
+    /**
+     * @notice Test that if deployment fails due to Out-Of-Gas, it can be retried successfully.
+     *         Simulates OOG by restricting gas in a low-level call.
+     */
+    function test_CarveOutOfGasRetry() public {
+        bytes memory runtime = hex"602a60005260206000f3"; // 42
+        address predicted = carver.addressOfBytecode(runtime);
+
+        // 1. Attempt deployment with insufficient gas
+        // Using a very low gas limit (e.g. 5000) to ensure it fails during execution
+        // but high enough to potentially start the call.
+        (bool success,) = address(carver).call{gas: 5000}(abi.encodeCall(HashCarve.carveBytecode, (runtime)));
+
+        // Expect failure
+        assertFalse(success, "Should have failed due to OOG");
+
+        // Verify NOT deployed
+        assertEq(predicted.code.length, 0, "Should not be deployed after failure");
+
+        // 2. Retry with full gas
+        address deployed = carver.carveBytecode(runtime);
+
+        // Verify success
+        assertEq(deployed, predicted, "Address mismatch after retry");
+        assertEq(deployed.code, runtime, "Code mismatch after retry");
+    }
 }

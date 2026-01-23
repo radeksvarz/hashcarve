@@ -26,6 +26,16 @@ interface IHashCarve {
     ) external returns (address addr);
 
     /**
+     * @notice Deploys multiple contracts in a single transaction.
+     * @dev Useful for ensuring atomic deployment of related contracts (e.g. Diamond Facets) and saving gas.
+     * @param _runtimes Array of runtime bytecodes to deploy.
+     * @return deployedAddresses Array of basic addresses of the deployed contracts.
+     */
+    function carveBatch(
+        bytes[] calldata _runtimes
+    ) external returns (address[] memory deployedAddresses);
+
+    /**
      * @notice Predicts the address of a contract deployed with the given runtime bytecode.
      * @dev The identity (resultant address) is determined by every byte of the input runtimeBytecode array,
      *      including any compiler CBOR metadata if attached by the compiler as of the configuration.
