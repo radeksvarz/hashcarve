@@ -10,7 +10,7 @@ pragma solidity 0.8.33;
  *
  * Usage:
  * 1. Calculate and predict the address of your contract based on its raw runtime bytecode using addressOfBytecode().
- * 2. Deploy the contract using carveBytecode(runtimeBytecode).
+ * 2. Deploy the contract using carve(runtimeBytecode).
  *    - No constructor code is executed; the provided bytecode becomes the runtime code.
  *    - The address is deterministically based on the runtime bytecode.
  *    - Multichain consistency is guaranteed if HashCarve is deployed at the same address on all chains.
@@ -44,10 +44,10 @@ contract HashCarve is IHashCarve {
      * @param runtimeBytecode The raw runtime bytecode to deploy.
      * @return addr The address of the deployed contract.
      */
-    function carveBytecode(
+    function carve(
         bytes calldata runtimeBytecode
     ) external returns (address addr) {
-        return _carveBytecode(runtimeBytecode);
+        return _carve(runtimeBytecode);
     }
 
     /**
@@ -62,14 +62,14 @@ contract HashCarve is IHashCarve {
         deployedAddresses = new address[](_runtimes.length);
 
         for (uint256 i = 0; i < _runtimes.length;) {
-            deployedAddresses[i] = _carveBytecode(_runtimes[i]);
+            deployedAddresses[i] = _carve(_runtimes[i]);
             unchecked {
                 ++i;
             }
         }
     }
 
-    function _carveBytecode(
+    function _carve(
         bytes calldata runtimeBytecode
     ) internal returns (address addr) {
         assembly {

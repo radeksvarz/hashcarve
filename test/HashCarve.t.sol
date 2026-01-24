@@ -21,7 +21,7 @@ contract HashCarveTest is Test {
         bytes memory runtime = hex"602a60005260206000f3";
 
         address predicted = carver.addressOfBytecode(runtime);
-        address deployed = carver.carveBytecode(runtime);
+        address deployed = carver.carve(runtime);
 
         assertEq(deployed, predicted, "Address mismatch");
         assertNotEq(deployed, address(0), "Deployment failed");
@@ -46,7 +46,7 @@ contract HashCarveTest is Test {
 
         assertEq(addr1, addr2, "Address should be deterministic");
 
-        address deployed = carver.carveBytecode(runtime);
+        address deployed = carver.carve(runtime);
         assertEq(deployed, addr1, "Deployed address does not match predicted address");
     }
 
@@ -55,10 +55,10 @@ contract HashCarveTest is Test {
      */
     function test_RevertOnDuplicate() public {
         bytes memory runtime = hex"60ff60005260206000f3";
-        carver.carveBytecode(runtime);
+        carver.carve(runtime);
 
         vm.expectRevert(IHashCarve.DeploymentFailed.selector);
-        carver.carveBytecode(runtime);
+        carver.carve(runtime);
     }
 
     /**
@@ -67,7 +67,7 @@ contract HashCarveTest is Test {
     function test_RevertOnEFPrefix() public {
         bytes memory runtime = hex"ef001122";
         vm.expectRevert(IHashCarve.DeploymentFailed.selector);
-        carver.carveBytecode(runtime);
+        carver.carve(runtime);
     }
 
     /**
@@ -76,7 +76,7 @@ contract HashCarveTest is Test {
     function test_EmptyBytecode() public {
         bytes memory runtime = hex"";
         vm.expectRevert(IHashCarve.DeploymentFailed.selector);
-        carver.carveBytecode(runtime);
+        carver.carve(runtime);
     }
 
     /**
@@ -96,7 +96,7 @@ contract HashCarveTest is Test {
         vm.assume(boundedRecord[0] != 0xEF);
 
         address predicted = carver.addressOfBytecode(boundedRecord);
-        address deployed = carver.carveBytecode(boundedRecord);
+        address deployed = carver.carve(boundedRecord);
 
         assertEq(deployed, predicted, "Fuzz match failed");
         assertEq(deployed.code, boundedRecord, "Fuzz code failed");
@@ -109,7 +109,7 @@ contract HashCarveTest is Test {
         bytes memory runtime = hex"604260005260206000f3";
         address predictedBefore = carver.addressOfBytecode(runtime);
 
-        carver.carveBytecode(runtime);
+        carver.carve(runtime);
 
         address predictedAfter = carver.addressOfBytecode(runtime);
         assertEq(predictedBefore, predictedAfter, "Prediction should be static");
@@ -122,7 +122,7 @@ contract HashCarveTest is Test {
         bytes memory runtime = hex"0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20";
 
         address predicted = carver.addressOfBytecode(runtime);
-        address deployed = carver.carveBytecode(runtime);
+        address deployed = carver.carve(runtime);
 
         assertEq(deployed, predicted, "Address mismatch (32 bytes)");
         assertEq(deployed.code, runtime, "Code mismatch (32 bytes)");
@@ -138,7 +138,7 @@ contract HashCarveTest is Test {
         );
 
         address predicted = carver.addressOfBytecode(runtime);
-        address deployed = carver.carveBytecode(runtime);
+        address deployed = carver.carve(runtime);
 
         assertEq(deployed, predicted, "Address mismatch (64 bytes)");
         assertEq(deployed.code, runtime, "Code mismatch (64 bytes)");
@@ -149,7 +149,7 @@ contract HashCarveTest is Test {
      */
     function test_IsCarved() public {
         bytes memory runtime = hex"602a60005260206000f3"; // 42
-        address target = carver.carveBytecode(runtime);
+        address target = carver.carve(runtime);
 
         assertTrue(carver.isCarved(target), "Should verify successfully");
         assertFalse(carver.isCarved(address(this)), "Should not verify non-HashCarve contract");
@@ -157,7 +157,7 @@ contract HashCarveTest is Test {
         assertFalse(carver.isCarved(address(0xdead)), "Should return false for empty address");
 
         bytes memory runtime2 = hex"602b60005260206000f3"; // 43
-        address target2 = carver.carveBytecode(runtime2);
+        address target2 = carver.carve(runtime2);
         assertTrue(carver.isCarved(target2), "Should verify second contract successfully");
     }
 
@@ -172,7 +172,7 @@ contract HashCarveTest is Test {
         // 1. Attempt deployment with insufficient gas
         // Using a very low gas limit (e.g. 5000) to ensure it fails during execution
         // but high enough to potentially start the call.
-        (bool success,) = address(carver).call{gas: 5000}(abi.encodeCall(HashCarve.carveBytecode, (runtime)));
+        (bool success,) = address(carver).call{gas: 5000}(abi.encodeCall(HashCarve.carve, (runtime)));
 
         // Expect failure
         assertFalse(success, "Should have failed due to OOG");
@@ -181,7 +181,7 @@ contract HashCarveTest is Test {
         assertEq(predicted.code.length, 0, "Should not be deployed after failure");
 
         // 2. Retry with full gas
-        address deployed = carver.carveBytecode(runtime);
+        address deployed = carver.carve(runtime);
 
         // Verify success
         assertEq(deployed, predicted, "Address mismatch after retry");

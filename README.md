@@ -5,7 +5,7 @@
 By utilizing a deterministic "micro-constructor" wrapper, HashCarve ensures that a contract's address is a direct cryptographic commitment to its runtime logic, bypassing the variability of traditional Solidity initialization.
 
 ```solidity
-address deployed = HASH_CARVE.carveBytecode(runtimeBytecode);
+address deployed = HASH_CARVE.carve(runtimeBytecode);
 ```
 
 ## Motivation
@@ -229,7 +229,7 @@ import {console} from "forge-std/console.sol";
 
 interface IHashCarve {
     error DeploymentFailed();
-    function carveBytecode(bytes calldata runtimeBytecode) external returns (address addr);
+    function carve(bytes calldata runtimeBytecode) external returns (address addr);
     function addressOfBytecode(bytes calldata runtimeBytecode) external view returns (address addr);
 }
 
@@ -253,7 +253,7 @@ contract DeployScript {
 
         // Deploy if not already present
         if (predicted.code.length == 0) {
-            address deployed = HASH_CARVE.carveBytecode(runtimeBytecode);
+            address deployed = HASH_CARVE.carve(runtimeBytecode);
             console.log(
                 string.concat("Deployed to: ", vm.toString(deployed), " hash: ", vm.toString(deployed.codehash))
             );
@@ -296,7 +296,7 @@ async function main() {
   // Check if deployed
   const code = await ethers.provider.getCode(predicted);
   if (code === "0x") {
-    const tx = await hashCarve.carveBytecode(runtimeBytecode);
+    const tx = await hashCarve.carve(runtimeBytecode);
     await tx.wait();
     const finalCode = await ethers.provider.getCode(predicted);
     console.log(`Deployed to: ${predicted} hash: ${ethers.keccak256(finalCode)}`);

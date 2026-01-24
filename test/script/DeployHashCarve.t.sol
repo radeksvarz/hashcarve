@@ -78,7 +78,7 @@ contract DeployHashCarveTest is Test {
         assertTrue(predicted != address(0), "predicted address should not be zero");
 
         // Try to carve something
-        address carved = hc.carveBytecode(testPayload);
+        address carved = hc.carve(testPayload);
         assertEq(carved, predicted, "Carved address should match predicted address");
         assertEq(carved.code.length, testPayload.length, "Carved code length mismatch");
     }

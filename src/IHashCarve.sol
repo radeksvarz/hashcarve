@@ -21,7 +21,7 @@ interface IHashCarve {
      * @param runtimeBytecode The raw runtime bytecode to deploy.
      * @return addr The address of the deployed contract.
      */
-    function carveBytecode(
+    function carve(
         bytes calldata runtimeBytecode
     ) external returns (address addr);
 

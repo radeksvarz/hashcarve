@@ -54,6 +54,8 @@ contract DeployHashCarve is Script {
         // 0 byte to switch off cross-chain redeploy protection; 11 bytes magic salt
         // Details:
         // https://github.com/pcaversaccio/createx#permissioned-deploy-protection-and-cross-chain-redeploy-protection
+        // casting to 'bytes11' is safe because string is exactly 11 bytes long
+        // forge-lint: disable-next-line(unsafe-typecast)
         bytes32 salt = bytes32(abi.encodePacked(address(0), hex"00", bytes11("MEGVA071315")));
         bytes32 initCodeHash = keccak256(initCode);
 
