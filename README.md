@@ -1,5 +1,7 @@
 # HashCarve
 
+![HashCarve Banner](assets/banner.png)
+
 **HashCarve** is a gas-optimized, multichain-consistent deployer designed for **content-addressable runtime bytecode**.
 
 By utilizing a deterministic "micro-constructor" wrapper, HashCarve ensures that a contract's address is a direct cryptographic commitment to its runtime logic, bypassing the variability of traditional Solidity initialization.
@@ -33,23 +35,21 @@ Use **HashCarve** in your deployment scripts:
 // Recarve existing code to canonical address
 address canonical = HASH_CARVE.carveFrom(sourceAddress);
 
+// Recarve multiple sources in one go (Migration)
+address[] memory targets = HASH_CARVE.carveFromBatch(sourceAddresses);
+
 // Validate identity
 bool isCanonical = HASH_CARVE.isCarved(someDeployedContractAddress);
 ```
-Further details about [Recarving](#recarving-on-chain-code-recycling) and [Validation](#contract-validation-the-iscarved-function).
+Further details about [Recarving](#recarving-on-chain-code-migration) and [Validation](#contract-validation-the-iscarved-function).
 
 ## Key Features
 
-* **Diamond-Ready:** Optimized for [EIP-2535 Diamond Facets](https://eips.ethereum.org/EIPS/eip-2535). Since facets are stateless logic providers, they are the perfect candidate for content-addressing.
 * **Gas Efficient:** Uses a minimal Yul-based micro-constructor to minimize deployment overhead.
 
-### Compatibility
+* **Compatibility:** The target EVM version for **HashCarve** compilation is set to **Paris**. Neither the contract creation bytecode of HashCarve nor the returned runtime bytecode contains a `PUSH0` instruction, ensuring maximum usability and compatibility among EVM-compatible chains.
 
-The target EVM version for **HashCarve** compilation is set to **Paris**. Neither the contract creation bytecode of HashCarve nor the returned runtime bytecode contains a `PUSH0` instruction, ensuring maximum usability and compatibility among EVM-compatible chains.
-
-## HashCarve in the Diamond Context
-
-In the [EIP-2535 Diamond Standard](https://eips.ethereum.org/EIPS/eip-2535), facets are often stateless logic providers. Traditionally, managing facet addresses across multiple chains can be cumbersome.
+* **Diamond & Modular Ready:** Optimized for [EIP-2535 Diamond Facets](https://eips.ethereum.org/EIPS/eip-2535) and [EIP-8109 Simplified Diamond Facets](https://eips.ethereum.org/EIPS/eip-8109). Since facets/modules are stateless logic deployments, they are the perfect candidate for content-addressing. Traditionally, managing their addresses across multiple chains can be cumbersome.
 
 Saying **"I'm using HashCarve to deploy the facets"** carries a profound architectural implication: **facets are pointable and addressable by the hash of their bytecode.**
 
@@ -128,7 +128,7 @@ The `isCarved` function performs the following steps in a single, gas-efficient 
 
 ## Recarving: On-Chain Code Migration
 
-HashCarve introduces the concept of **Recarving** via `carveFrom` and `carveFromBatch`. This allows you to deploy a canonical HashCarve contract using the bytecode of an *existing* contract on-chain as the source.
+HashCarve introduces **Recarving** via `carveFrom` (for single addresses, optimized for CLI use) and `carveFromBatch` (for mass migrations). This allows you to deploy a canonical HashCarve contract using the bytecode of an *existing* contract on-chain as the source.
 
 ### Motivation
 
@@ -221,6 +221,7 @@ Where the **MicroConstructor** is a constant 11-byte sequence that returns the a
 
 * **EIP Discussion:** [Deterministic Pure Runtime Bytecode Deployment](https://ethereum-magicians.org/t/eip-potential-proposal-deterministic-pure-runtime-bytecode-deployment/23070)
 * **EIP-2535:** [Diamond Standard](https://eips.ethereum.org/EIPS/eip-2535)
+* **EIP-8109:** [Universal Content-Addressable Logic Registry](https://eips.ethereum.org/EIPS/eip-8109)
 
 ---
 
@@ -305,10 +306,11 @@ contract DeployScript {
         bool isValid = HASH_CARVE.isCarved(recarved);
         console.log("Is canonical HashCarve contract:", isValid);
         
-        // 3. Batch Recarve: Deploy multiple sources at once
-        address[] memory sources = new address[](1);
-        sources[0] = existingContract;
-        address[] memory batchDeployed = HASH_CARVE.carveFromBatch(sources);
+        // 3. Recarve Batch: Mass migration
+        address[] memory sources = new address[](2);
+        sources[0] = addr1;
+        sources[1] = addr2;
+        address[] memory deployed = HASH_CARVE.carveFromBatch(sources);
     }
 }
 ```
