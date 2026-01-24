@@ -14,7 +14,9 @@ pragma solidity 0.8.33;
  *    - No constructor code is executed; the provided bytecode becomes the runtime code.
  *    - The address is deterministically based on the runtime bytecode.
  *    - Multichain consistency is guaranteed if HashCarve is deployed at the same address on all chains.
- * 3. Use carveBatch(runtimes) to deploy multiple contracts atomically in a single transaction.
+ * 3. Recycle existing bytecode on-chain using carveFrom(address) to deploy a new content-addressable clone.
+ * 4. Verify the integrity and origin of a contract using isCarved(address).
+ * 5. Use carveBatch(runtimes) or carveFromBatch(sources) for atomic batch deployments.
  */
 import {IHashCarve} from "./IHashCarve.sol";
 
@@ -93,6 +95,76 @@ contract HashCarve is IHashCarve {
             // Verify deployment: address must be non-zero, size must be non-zero and match input length.
             let carvedSize := extcodesize(addr)
             if or(iszero(addr), or(iszero(carvedSize), sub(carvedSize, runtimeBytecode.length))) {
+                // DeploymentFailed() selector: 0x30116425
+                mstore(0x00, 0x30116425)
+                revert(0x1c, 0x04)
+            }
+        }
+    }
+
+    /**
+     * @notice Deploys a new contract by copying the runtime code from an existing address.
+     * @dev Uses existing runtime code as the blueprint.
+     * @param _source The address of the source contract to copy code from.
+     * @return addr The address of the new content-addressable contract.
+     */
+    function carveFrom(
+        address _source
+    ) external override returns (address addr) {
+        return _carveFrom(_source);
+    }
+
+    /**
+     * @notice Deploys multiple contracts by copying from multiple sources.
+     * @param _sources Array of source addresses.
+     * @return deployedAddresses Array of addresses of the deployed contracts.
+     */
+    function carveFromBatch(
+        address[] calldata _sources
+    ) external override returns (address[] memory deployedAddresses) {
+        deployedAddresses = new address[](_sources.length);
+
+        for (uint256 i = 0; i < _sources.length;) {
+            deployedAddresses[i] = _carveFrom(_sources[i]);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _carveFrom(
+        address _source
+    ) internal returns (address addr) {
+        assembly {
+            // Get size of source code
+            let size := extcodesize(_source)
+            if iszero(size) {
+                // Revert if source has no code
+                // DeploymentFailed() selector: 0x30116425
+                mstore(0x00, 0x30116425)
+                revert(0x1c, 0x04)
+            }
+
+            // Get free memory pointer
+            let ptr := mload(0x40)
+
+            // Memory layout (deployment payload):
+            // [ptr:ptr+0x0b] = 11-byte micro-constructor
+            // [ptr+0x0b:...] = source runtime code
+            mstore(ptr, 0x600B380380600B3D393DF3000000000000000000000000000000000000000000)
+
+            // Copy source code to memory offset ptr + 11
+            extcodecopy(_source, add(ptr, 0x0b), 0, size)
+
+            // value = 0 // no value transfer to the target contract
+            // memory pointer = ptr
+            // size = size + 0x0b (micro_constructor.length)
+            // salt = 0 (using 0 to ensure address consistency with standard carve)
+            addr := create2(0, ptr, add(0x0b, size), 0)
+
+            // Verify deployment: address must be non-zero, size must be non-zero and match input length.
+            let carvedSize := extcodesize(addr)
+            if or(iszero(addr), or(iszero(carvedSize), sub(carvedSize, size))) {
                 // DeploymentFailed() selector: 0x30116425
                 mstore(0x00, 0x30116425)
                 revert(0x1c, 0x04)

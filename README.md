@@ -27,11 +27,16 @@ Use **HashCarve** in your deployment scripts:
 *   **Foundry:** [Foundry deployment script](#1-with-foundry)
 *   **Hardhat:** [Hardhat deployment script](#2-with-hardhat)
 
-**Validation of already deployed code:**
+
+**Additional features:**
 ```solidity
-bool isCanonical = HASH_CARVE.isCarved(deployedAddress);
+// Recarve existing code to canonical address
+address canonical = HASH_CARVE.carveFrom(sourceAddress);
+
+// Validate identity
+bool isCanonical = HASH_CARVE.isCarved(someDeployedContractAddress);
 ```
-Further details about [Validation](#why-validate) (addresses are de facto bytecode hashes).
+Further details about [Recarving](#recarving-on-chain-code-recycling) and [Validation](#contract-validation-the-iscarved-function).
 
 ## Key Features
 
@@ -120,6 +125,28 @@ The `isCarved` function performs the following steps in a single, gas-efficient 
 4.  Compares the calculated address with the `target` address.
 
 > This allows for seamless, trustless integration where your proxy or registry can automatically validate facets before allowing them to be added. It also means that the design blueprint of your solution can contain these deployment addresses as de facto bytecode hashes, so no extra runtime bytecode hash is needed as a proof.
+
+## Recarving: On-Chain Code Migration
+
+HashCarve introduces the concept of **Recarving** via `carveFrom` and `carveFromBatch`. This allows you to deploy a canonical HashCarve contract using the bytecode of an *existing* contract on-chain as the source.
+
+### Motivation
+
+1.  **Gas Savings:** Deploying large contracts usually requires sending the full bytecode in the transaction calldata, which is expensive (approx. 16 gas/byte). By using `carveFrom(sourceAddress)`, you simply point to an existing contract. HashCarve copies the runtime code from the source on-chain, avoiding the calldata cost for the bytecode.
+2.  **Migration & Standardization:** You may have deployments of libraries or facets at non-canonical addresses (e.g., from legacy deployments). `carveFrom` allows you to "lift" that logic into the canonical HashCarve addressing system without needing the original build artifacts or redeploying from scratch.
+3.  **Batch Processing:** `carveFromBatch` helps in rapidly securing canonical addresses for a list of known safe deployments in a single transaction.
+
+### How it works
+
+```solidity
+// Takes the runtime code at `sourceAddress` and deploys it deterministically
+address canonical = HASH_CARVE.carveFrom(sourceAddress);
+```
+
+The resulting address is identical to what `carve(bytecode)` would produce. This ensures that the identity of the code is preserved regardless of how it was onboarded (via direct bytecode deployment or recarving).
+
+> **Note:** `carveFrom` fails if the `sourceAddress` has no code. 
+
 
 ## Decision Tree: Choosing Your Deployment Strategy
 
@@ -235,12 +262,12 @@ interface IHashCarve {
 
 contract DeployScript {
     // HashCarve canonical address
-    IHashCarve constant HASH_CARVE = IHashCarve(0xbC22b184901c28942e391a6B2D86C1aBeE6bc7ad);
+    IHashCarve constant HASH_CARVE = IHashCarve(0x9c8D020b832Ee8AAF92cB555819Dc8a0c1097F56);
 
     function run() external {
         // Check if HashCarve is deployed on this chain (checking bytecode integrity)
         // Note: Hash depends on compiler version 0.8.33 and specific settings
-        bytes32 expectedHash = 0x663591e5ff14eb55ef1f3f167deefea8779a3a1efbfd7858c293892258446558;
+        bytes32 expectedHash = 0x633d376631b052e1fe3ec4c6eb8e216b412444e4c5bf66fbedc682d941016529;
         if (address(HASH_CARVE).codehash != expectedHash) {
             revert("HashCarve not found at expected address or bytecode mismatch. Please deploy it first.");
         }
@@ -265,6 +292,24 @@ contract DeployScript {
             );
         }
     }
+
+    /**
+     * @notice Example showing on-chain code recarving and validation
+     */
+    function recarveAndVerify(address existingContract) external {
+        // 1. Recarve: Deploy a new content-addressable clone from an existing contract
+        address recarved = HASH_CARVE.carveFrom(existingContract);
+        require(recarved != address(0), "Recarving failed");
+
+        // 2. Validate: Cryptographically verify it is a legitimate HashCarve deployment
+        bool isValid = HASH_CARVE.isCarved(recarved);
+        console.log("Is canonical HashCarve contract:", isValid);
+        
+        // 3. Batch Recarve: Deploy multiple sources at once
+        address[] memory sources = new address[](1);
+        sources[0] = existingContract;
+        address[] memory batchDeployed = HASH_CARVE.carveFromBatch(sources);
+    }
 }
 ```
 
@@ -276,11 +321,11 @@ In Hardhat, you can use `ethers.js` to interact with the factory. Ensure you are
 const { ethers } = require("hardhat");
 
 async function main() {
-  const hashCarveAddress = "0xbC22b184901c28942e391a6B2D86C1aBeE6bc7ad"; // HashCarve canonical address
+  const hashCarveAddress = "0x9c8D020b832Ee8AAF92cB555819Dc8a0c1097F56"; // HashCarve canonical address
   const hashCarve = await ethers.getContractAt("IHashCarve", hashCarveAddress);
 
   // Check if HashCarve is deployed on this chain (checking bytecode integrity)
-  const expectedHash = "0x663591e5ff14eb55ef1f3f167deefea8779a3a1efbfd7858c293892258446558";
+  const expectedHash = "0x633d376631b052e1fe3ec4c6eb8e216b412444e4c5bf66fbedc682d941016529";
   const factoryCode = await ethers.provider.getCode(hashCarveAddress);
   if (ethers.keccak256(factoryCode) !== expectedHash) {
     throw new Error("HashCarve not found at expected address or bytecode mismatch.");
@@ -317,7 +362,7 @@ If HashCarve is not yet deployed on your target chain, you can deploy it yoursel
 forge script script/DeployHashCarve.s.sol --rpc-url <YOUR_RPC_URL> --broadcast
 ```
 
-3.  **Verify:** The script will check the address. If successful, HashCarve will be at `0xbC22b184901c28942e391a6B2D86C1aBeE6bc7ad`.
+3.  **Verify:** The script will check the address. If successful, HashCarve will be at `0x9c8D020b832Ee8AAF92cB555819Dc8a0c1097F56`.
 
 ## HashCarve Deployments
 

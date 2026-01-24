@@ -36,6 +36,25 @@ interface IHashCarve {
     ) external returns (address[] memory deployedAddresses);
 
     /**
+     * @notice Deploys a new contract by copying the runtime code from an existing address.
+     * @dev Uses existing runtime code as the blueprint.
+     * @param _source The address of the source contract to copy code from.
+     * @return addr The address of the new content-addressable contract.
+     */
+    function carveFrom(
+        address _source
+    ) external returns (address addr);
+
+    /**
+     * @notice Deploys multiple contracts by copying from multiple sources.
+     * @param _sources Array of source addresses.
+     * @return deployedAddresses Array of addresses of the deployed contracts.
+     */
+    function carveFromBatch(
+        address[] calldata _sources
+    ) external returns (address[] memory deployedAddresses);
+
+    /**
      * @notice Predicts the address of a contract deployed with the given runtime bytecode.
      * @dev The identity (resultant address) is determined by every byte of the input runtimeBytecode array,
      *      including any compiler CBOR metadata if attached by the compiler as of the configuration.
