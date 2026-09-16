@@ -238,13 +238,13 @@ contract HashCarve is IHashCarve {
             let initcodeHash := keccak256(ptr, add(11, size))
 
             // 2. Prepare CREATE2 calculation buffer (85 bytes) at 0x00
-            mstore8(0x00, 0xff)
-            mstore(0x01, shl(96, address()))
-            mstore(0x15, 0) // salt
-            mstore(0x35, initcodeHash)
+            mstore(0x00, address())
+            mstore8(0x0b, 0xff)
+            mstore(0x20, 0) // salt
+            mstore(0x40, initcodeHash)
 
             // Compute the predicted address and compare with target
-            let predicted := and(keccak256(0x00, 85), 0xffffffffffffffffffffffffffffffffffffffff)
+            let predicted := and(keccak256(0x0b, 85), 0xffffffffffffffffffffffffffffffffffffffff)
 
             // Store result (bool) and return
             mstore(0x00, eq(predicted, target))
