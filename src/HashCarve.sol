@@ -228,14 +228,13 @@ contract HashCarve is IHashCarve {
             }
 
             // Reconstruction buffer: [MICRO_CONSTRUCTOR (11 bytes)] ++ [target runtime code]
-            let ptr := mload(0x40)
             // Store MICRO_CONSTRUCTOR (11 bytes)
-            mstore(ptr, 0x600B380380600B3D393DF3000000000000000000000000000000000000000000)
+            mstore(0, 0x600B380380600B3D393DF3000000000000000000000000000000000000000000)
             // Copy target's bytecode into buffer at offset 11
-            extcodecopy(target, add(ptr, 11), 0, size)
+            extcodecopy(target, 11, 0, size)
 
-            // 1. Calculate initcode hash: keccak256(ptr, 11 + size)
-            let initcodeHash := keccak256(ptr, add(11, size))
+            // 1. Calculate initcode hash: keccak256(0, 11 + size)
+            let initcodeHash := keccak256(0, add(11, size))
 
             // 2. Prepare CREATE2 calculation buffer (85 bytes) at 0x0b
             mstore(0x00, address())
