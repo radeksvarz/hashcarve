@@ -195,13 +195,13 @@ contract HashCarve is IHashCarve {
             // [0x01:0x15] address(this) (20 bytes)
             // [0x15:0x35] 0x00 salt (32 bytes)
             // [0x35:0x55] initcodeHash (32 bytes)
-            mstore8(0x00, 0xff)
-            mstore(0x01, shl(96, address()))
-            mstore(0x15, 0)
-            mstore(0x35, initcodeHash)
+            mstore(0x00, address())
+            mstore8(0x0b, 0xff)
+            mstore(0x20, 0)
+            mstore(0x40, initcodeHash)
 
             // Compute final address, store at 0x00 and return
-            mstore(0x00, and(keccak256(0x00, 85), 0xffffffffffffffffffffffffffffffffffffffff))
+            mstore(0x00, and(keccak256(0x0b, 85), 0xffffffffffffffffffffffffffffffffffffffff))
             return(0x00, 0x20)
         }
     }
