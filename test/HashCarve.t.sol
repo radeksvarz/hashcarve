@@ -75,7 +75,10 @@ contract HashCarveTest is Test {
      */
     function test_EmptyBytecode() public {
         bytes memory runtime = hex"";
-        carver.carve(runtime);
+        address deployed = carver.carve(runtime);
+
+        assertEq(deployed.code, runtime);
+        assertTrue(carver.isCarved(deployed));
 
         vm.expectRevert();
         carver.carve(runtime);

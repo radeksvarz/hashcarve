@@ -221,10 +221,6 @@ contract HashCarve is IHashCarve {
         assembly {
             // Get code size of target
             let size := extcodesize(target)
-            if iszero(size) {
-                mstore(0x00, 0)
-                return(0x00, 0x20)
-            }
 
             // Reconstruction buffer: [MICRO_CONSTRUCTOR (11 bytes)] ++ [target runtime code]
             let ptr := mload(0x40)
