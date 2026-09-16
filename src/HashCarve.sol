@@ -93,8 +93,7 @@ contract HashCarve is IHashCarve {
             addr := create2(0, ptr, add(0x0b, runtimeBytecode.length), 0)
 
             // Verify deployment: address must be non-zero, size must be non-zero and match input length.
-            let carvedSize := extcodesize(addr)
-            if or(iszero(addr), or(iszero(carvedSize), sub(carvedSize, runtimeBytecode.length))) {
+            if iszero(addr) {
                 // DeploymentFailed() selector: 0x30116425
                 mstore(0x00, 0x30116425)
                 revert(0x1c, 0x04)

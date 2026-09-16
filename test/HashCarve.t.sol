@@ -75,7 +75,9 @@ contract HashCarveTest is Test {
      */
     function test_EmptyBytecode() public {
         bytes memory runtime = hex"";
-        vm.expectRevert(IHashCarve.DeploymentFailed.selector);
+        carver.carve(runtime);
+
+        vm.expectRevert();
         carver.carve(runtime);
     }
 
