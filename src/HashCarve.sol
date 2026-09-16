@@ -191,10 +191,10 @@ contract HashCarve is IHashCarve {
 
             // 2. Prepare CREATE2 calculation buffer (85 bytes)
             // Layout:
-            // [0x00:0x01] 0xff
-            // [0x01:0x15] address(this) (20 bytes)
-            // [0x15:0x35] 0x00 salt (32 bytes)
-            // [0x35:0x55] initcodeHash (32 bytes)
+            // [0x0b:0x0c) 0xff
+            // [0x0c:0x20) address(this) (20 bytes)
+            // [0x20:0x40) 0x00 salt (32 bytes)
+            // [0x40:0x60) initcodeHash (32 bytes)
             mstore(0x00, address())
             mstore8(0x0b, 0xff)
             mstore(0x20, 0)
@@ -237,7 +237,7 @@ contract HashCarve is IHashCarve {
             // 1. Calculate initcode hash: keccak256(ptr, 11 + size)
             let initcodeHash := keccak256(ptr, add(11, size))
 
-            // 2. Prepare CREATE2 calculation buffer (85 bytes) at 0x00
+            // 2. Prepare CREATE2 calculation buffer (85 bytes) at 0x0b
             mstore(0x00, address())
             mstore8(0x0b, 0xff)
             mstore(0x20, 0) // salt
