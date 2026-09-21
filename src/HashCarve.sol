@@ -48,7 +48,7 @@ contract HashCarve is IHashCarve {
      */
     function carve(
         bytes calldata runtimeBytecode
-    ) external override returns (address addr) {
+    ) external returns (address addr) {
         return _carve(runtimeBytecode);
     }
 
@@ -60,7 +60,7 @@ contract HashCarve is IHashCarve {
      */
     function carveBatch(
         bytes[] calldata _runtimes
-    ) external override returns (address[] memory deployedAddresses) {
+    ) external returns (address[] memory deployedAddresses) {
         deployedAddresses = new address[](_runtimes.length);
 
         for (uint256 i = 0; i < _runtimes.length;) {
@@ -110,7 +110,7 @@ contract HashCarve is IHashCarve {
      */
     function carveFrom(
         address _source
-    ) external override returns (address addr) {
+    ) external returns (address addr) {
         return _carveFrom(_source);
     }
 
@@ -121,7 +121,7 @@ contract HashCarve is IHashCarve {
      */
     function carveFromBatch(
         address[] calldata _sources
-    ) external override returns (address[] memory deployedAddresses) {
+    ) external returns (address[] memory deployedAddresses) {
         deployedAddresses = new address[](_sources.length);
 
         for (uint256 i = 0; i < _sources.length;) {
@@ -181,7 +181,7 @@ contract HashCarve is IHashCarve {
      */
     function addressOfBytecode(
         bytes calldata runtimeBytecode
-    ) external view override returns (address) {
+    ) external view returns (address) {
         assembly {
             // 1. Calculate initcode hash: keccak256(MICRO_CONSTRUCTOR ++ runtimeBytecode)
             // Store MICRO_CONSTRUCTOR (11 bytes) at memory 0
@@ -218,7 +218,7 @@ contract HashCarve is IHashCarve {
      */
     function isCarved(
         address target
-    ) external view override returns (bool) {
+    ) external view returns (bool) {
         assembly {
             // Get code size of target
             let size := extcodesize(target)
