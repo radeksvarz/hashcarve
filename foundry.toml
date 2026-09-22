@@ -31,4 +31,7 @@ override_spacing = true
 wrap_comments = true
 ignore = []
 
+[lint]
+ignore = ["test/**/*.sol", "**/*.t.sol"]
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
