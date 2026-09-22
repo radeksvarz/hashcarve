@@ -135,7 +135,7 @@ contract DeployHashCarve is Script {
      */
     function _smokeTest(
         address hashCarve
-    ) internal {
+    ) internal view {
         // Confirm code existence at the target address
         require(hashCarve.code.length > 0, "Smoke Test Failed: Target address has no bytecode");
 
