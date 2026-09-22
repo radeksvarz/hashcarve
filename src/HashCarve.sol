@@ -191,17 +191,17 @@ contract HashCarve is IHashCarve {
 
             // 2. Prepare CREATE2 calculation buffer (85 bytes)
             // Layout:
-            // [0x00:0x01] 0xff
-            // [0x01:0x15] address(this) (20 bytes)
-            // [0x15:0x35] 0x00 salt (32 bytes)
-            // [0x35:0x55] initcodeHash (32 bytes)
-            mstore8(0x00, 0xff)
-            mstore(0x01, shl(96, address()))
-            mstore(0x15, 0)
-            mstore(0x35, initcodeHash)
+            // [0x0b:0x0c) 0xff
+            // [0x0c:0x20) address(this) (20 bytes)
+            // [0x20:0x40) 0x00 salt (32 bytes)
+            // [0x40:0x60) initcodeHash (32 bytes)
+            mstore(0x00, address())
+            mstore8(0x0b, 0xff)
+            mstore(0x20, 0)
+            mstore(0x40, initcodeHash)
 
             // Compute final address, store at 0x00 and return
-            mstore(0x00, and(keccak256(0x00, 85), 0xffffffffffffffffffffffffffffffffffffffff))
+            mstore(0x00, and(keccak256(0x0b, 85), 0xffffffffffffffffffffffffffffffffffffffff))
             return(0x00, 0x20)
         }
     }
@@ -228,23 +228,22 @@ contract HashCarve is IHashCarve {
             }
 
             // Reconstruction buffer: [MICRO_CONSTRUCTOR (11 bytes)] ++ [target runtime code]
-            let ptr := mload(0x40)
             // Store MICRO_CONSTRUCTOR (11 bytes)
-            mstore(ptr, 0x600B380380600B3D393DF3000000000000000000000000000000000000000000)
+            mstore(0, 0x600B380380600B3D393DF3000000000000000000000000000000000000000000)
             // Copy target's bytecode into buffer at offset 11
-            extcodecopy(target, add(ptr, 11), 0, size)
+            extcodecopy(target, 11, 0, size)
 
-            // 1. Calculate initcode hash: keccak256(ptr, 11 + size)
-            let initcodeHash := keccak256(ptr, add(11, size))
+            // 1. Calculate initcode hash: keccak256(0, 11 + size)
+            let initcodeHash := keccak256(0, add(11, size))
 
-            // 2. Prepare CREATE2 calculation buffer (85 bytes) at 0x00
-            mstore8(0x00, 0xff)
-            mstore(0x01, shl(96, address()))
-            mstore(0x15, 0) // salt
-            mstore(0x35, initcodeHash)
+            // 2. Prepare CREATE2 calculation buffer (85 bytes) at 0x0b
+            mstore(0x00, address())
+            mstore8(0x0b, 0xff)
+            mstore(0x20, 0) // salt
+            mstore(0x40, initcodeHash)
 
             // Compute the predicted address and compare with target
-            let predicted := and(keccak256(0x00, 85), 0xffffffffffffffffffffffffffffffffffffffff)
+            let predicted := and(keccak256(0x0b, 85), 0xffffffffffffffffffffffffffffffffffffffff)
 
             // Store result (bool) and return
             mstore(0x00, eq(predicted, target))
