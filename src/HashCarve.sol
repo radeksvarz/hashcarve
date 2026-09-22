@@ -75,6 +75,13 @@ contract HashCarve is IHashCarve {
         bytes calldata runtimeBytecode
     ) internal returns (address addr) {
         assembly {
+            // Revert if input runtime bytecode is empty
+            if iszero(runtimeBytecode.length) {
+                // DeploymentFailed() selector: 0x30116425
+                mstore(0x00, 0x30116425)
+                revert(0x1c, 0x04)
+            }
+
             // Get free memory pointer
             let ptr := mload(0x40)
 
@@ -92,9 +99,9 @@ contract HashCarve is IHashCarve {
             // salt = 0
             addr := create2(0, ptr, add(0x0b, runtimeBytecode.length), 0)
 
-            // Verify deployment: address must be non-zero, size must be non-zero and match input length.
-            let carvedSize := extcodesize(addr)
-            if or(iszero(addr), or(iszero(carvedSize), sub(carvedSize, runtimeBytecode.length))) {
+            // Verify deployment: address must be non-zero.
+            // When addr is non-zero, the micro-constructor guarantees exact runtime size match.
+            if iszero(addr) {
                 // DeploymentFailed() selector: 0x30116425
                 mstore(0x00, 0x30116425)
                 revert(0x1c, 0x04)
@@ -162,9 +169,9 @@ contract HashCarve is IHashCarve {
             // salt = 0 (using 0 to ensure address consistency with standard carve)
             addr := create2(0, ptr, add(0x0b, size), 0)
 
-            // Verify deployment: address must be non-zero, size must be non-zero and match input length.
-            let carvedSize := extcodesize(addr)
-            if or(iszero(addr), or(iszero(carvedSize), sub(carvedSize, size))) {
+            // Verify deployment: address must be non-zero.
+            // When addr is non-zero, the micro-constructor guarantees exact runtime size match.
+            if iszero(addr) {
                 // DeploymentFailed() selector: 0x30116425
                 mstore(0x00, 0x30116425)
                 revert(0x1c, 0x04)
