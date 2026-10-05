@@ -77,7 +77,7 @@ interface IHashCarve {
      *      other undeployed addresses (EOAs or empty accounts), `isCarved` returns `false` because their address does
      *      not match `addressOfBytecode(hex"")`.
      *      In EVM execution, an account with empty runtime code implicitly executes a STOP instruction (0x00),
-     *      returning immediately with success.
+     *      returning immediately with success effectively acting as NO OP contract.
      * @param target The address to check.
      * @return true if the contract at target address was deployed via HashCarve.
      */
