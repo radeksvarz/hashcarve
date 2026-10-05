@@ -81,6 +81,15 @@ contract HashCarveFromTest is Test {
         hashCarve.carveFrom(random);
     }
 
+    function test_CarveFromBatchRevertIfEmpty() public {
+        address[] memory sources = new address[](2);
+        sources[0] = address(sourceContract);
+        sources[1] = address(0);
+
+        vm.expectRevert(bytes4(0x30116425));
+        hashCarve.carveFromBatch(sources);
+    }
+
     function test_CarveFromOutOfGasRetry() public {
         address predicted = hashCarve.addressOfBytecode(runtimeCode);
 

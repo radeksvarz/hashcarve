@@ -71,6 +71,13 @@ interface IHashCarve {
      *      content-addressable derivation from its own runtime bytecode + HashCarve micro-constructor.
      *      NOTE: This is NOT "Source Code Verification" (like Etherscan). It validates the *origin* and *integrity*
      *      of the deployed bytecode, not the Solidity source.
+     * @dev Empty runtime bytecode (`hex""`) edge case: For the single deterministic address corresponding to empty
+     *      runtime code (`addressOfBytecode(hex"")`), `extcodesize` is 0, which matches the empty bytecode derivation.
+     *      Consequently, `isCarved(addressOfBytecode(hex""))` returns `true` even prior to explicit deployment. For all
+     *      other undeployed addresses (EOAs or empty accounts), `isCarved` returns `false` because their address does
+     *      not match `addressOfBytecode(hex"")`.
+     *      In EVM execution, an account with empty runtime code implicitly executes a STOP instruction (0x00),
+     *      returning immediately with success.
      * @param target The address to check.
      * @return true if the contract at target address was deployed via HashCarve.
      */

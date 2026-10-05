@@ -92,7 +92,8 @@ contract HashCarve is IHashCarve {
             // salt = 0
             addr := create2(0, ptr, add(0x0b, runtimeBytecode.length), 0)
 
-            // Verify deployment: address must be non-zero, size must be non-zero and match input length.
+            // Verify deployment: address must be non-zero.
+            // When addr is non-zero, the micro-constructor guarantees exact runtime size match.
             if iszero(addr) {
                 // DeploymentFailed() selector: 0x30116425
                 mstore(0x00, 0x30116425)
@@ -161,9 +162,9 @@ contract HashCarve is IHashCarve {
             // salt = 0 (using 0 to ensure address consistency with standard carve)
             addr := create2(0, ptr, add(0x0b, size), 0)
 
-            // Verify deployment: address must be non-zero, size must be non-zero and match input length.
-            let carvedSize := extcodesize(addr)
-            if or(iszero(addr), or(iszero(carvedSize), sub(carvedSize, size))) {
+            // Verify deployment: address must be non-zero.
+            // When addr is non-zero, the micro-constructor guarantees exact runtime size match.
+            if iszero(addr) {
                 // DeploymentFailed() selector: 0x30116425
                 mstore(0x00, 0x30116425)
                 revert(0x1c, 0x04)
@@ -209,9 +210,16 @@ contract HashCarve is IHashCarve {
      * @notice Checks if the contract at address target was deployed via HashCarve.
      * @dev Bytecode Identity Validation: This verifies that the code at `target` matches the
      *      content-addressable derivation from its own runtime bytecode + HashCarve micro-constructor.
-     *      NOTE: This is NOT "Source Code Verification" (like Etherscan). It validates the *origin* and *integrity*
-     *      of the deployed bytecode, not the Solidity source.
+     *      NOTE: This is NOT "Source Code Verification" (like explorers). It validates the *origin* and *integrity* of
+     *      the deployed bytecode, not the Solidity source.
      * @dev Reconstructs the initcode from target's runtime code and predicts the CREATE2 address.
+     * @dev Empty runtime bytecode (`hex""`) edge case: For the single deterministic address corresponding to empty
+     *      runtime code (`addressOfBytecode(hex"")`), `extcodesize` is 0, which matches the empty bytecode derivation.
+     *      Consequently, `isCarved(addressOfBytecode(hex""))` returns `true` even prior to explicit deployment. For all
+     *      other undeployed addresses (EOAs or empty accounts), `isCarved` returns `false` because their address does
+     *      not match `addressOfBytecode(hex"")`.
+     *      In EVM execution, an account with empty runtime code implicitly executes a STOP instruction (0x00),
+     *      returning immediately with success effectively acting as NO OP contract.
      * @param target The address to check.
      * @return true if the contract at target address was deployed via HashCarve.
      */
