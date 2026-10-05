@@ -47,7 +47,10 @@ Further details about [Recarving](#recarving-on-chain-code-migration) and [Valid
 
 * **Gas Efficient:** Uses a minimal Yul-based micro-constructor to minimize deployment overhead.
 
-* **Compatibility:** The target EVM version for **HashCarve** compilation is set to **Paris**. Neither the contract creation bytecode of HashCarve nor the returned runtime bytecode contains a `PUSH0` instruction, ensuring maximum usability and compatibility among EVM-compatible chains.
+* **Broad EVM Binary Compatibility:** The target EVM compilation version for **HashCarve** is set to **Paris**, omitting `PUSH0` (Shanghai) and newer instructions:
+  * **Petersburg (2019) to Cancun/Prague (2024+)**: HashCarve contains zero dependencies on modern opcodes (`PUSH0`, `MCOPY`, `TSTORE`/`TLOAD`, `PREVRANDAO`, `BASEFEE`, `CHAINID`). Its compiled bytecode is **bit-for-bit identical** across compiler targets from Petersburg to Paris.
+  * **Preload / Genesis Ready**: In addition to permissionless multi-chain deployment via **CreateX**, HashCarve can be directly preloaded into genesis allocations on private/consortium networks (e.g. Hyperledger Besu, private Geth) or custom rollups running any EVM version from Petersburg onwards.
+  * **Micro-constructor**: Relies strictly on Byzantium-era opcodes (`RETURNDATASIZE`, `CODECOPY`, `RETURN`). Runtime bytecodes carved *by* HashCarve can freely use whatever opcodes the host network supports.
 
 * **Diamond & Modular Ready:** Optimized for [EIP-2535 Diamond Facets](https://eips.ethereum.org/EIPS/eip-2535) and [EIP-8109 Simplified Diamond Facets](https://eips.ethereum.org/EIPS/eip-8109). Since facets/modules are stateless logic deployments, they are the perfect candidate for content-addressing. Traditionally, managing their addresses across multiple chains can be cumbersome.
 

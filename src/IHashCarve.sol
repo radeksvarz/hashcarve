@@ -5,7 +5,9 @@ pragma solidity 0.8.33;
  * @title IHashCarve
  * @author @radeksvarz (@radk)
  * @notice Interface for HashCarve, a gas-optimized, multichain-consistent deployer for content-addressable runtime
- * bytecode.
+ *         bytecode.
+ * @dev EVM Binary Compatibility: HashCarve bytecode targets EVM Paris without PUSH0, maintaining bit-for-bit
+ *      identity and compatibility across EVM versions from Petersburg (2019) through Cancun/Prague (2024+).
  */
 interface IHashCarve {
     /**
